@@ -1,0 +1,278 @@
+# COOKBOOK BRIEFING
+
+
+# How TensorFlow Works
+1. Import or generate datasets
+2. Transform and normalize data
+3. Partition datasets into train, test, and validation sets
+4. Set algorithm parameters (hyperparameters)
+5. Initialize variables and placeholders
+6. Define the model structure
+7. Declare the loss functions
+8. Initialize and train the model
+9. Evaluate the model
+10. Tune hyperparameters
+11. Deploy/predict new outcomes
+
+
+# Declaring Tensors
+1. Fixed tensors
+tf.zeros(shape)
+tf.ones(shape)
+
+tf.fill(shape, val)
+tf.constant(val, shape)
+
+2. Tensors of similar shape
+tf.zeros_like(constant_tensor)
+tf.ones_like(constant_tensor)
+
+3. Sequence tensors
+tf.linspace(start, stop, num)
+tf.range(start, limit, delta)
+
+4. Random tensors
+tf.random_uniform(shape, minval, maxval, seed)	# uniform distribution
+tf.random_normal(shape, mean, stddev)	# normal distribution, N(μ, σ^2)
+tf.truncated_normal(shape, mean, stddev)	# normal distribution, N(μ, σ^2) within (μ-2σ, μ+2σ)
+
+tf.random_shuffle(tensor)	# be careful if the tensor is generated from random function
+tf.random_crop(tensor, crop_size)	# dimension of crop_size should be equal to that of original tensor
+
+
+# Using Placeholders and Variables
+tf.Variable(tensor)
+tf.placeholder(dtype, shape) 	# placeholder for feed_dict parameters
+tf.identity(tensor)	# copy
+
+
+# Working with Matrices
+1. Creating matrices
+tf.diag(tensor)	# [n] -> [n, n]
+tf.convert_to_tensor(value)	# accepts `Tensor` objects, numpy arrays, Python lists and Python scalars
+... (several methods in <Delcaring tensor section>
+
+2. Addition and subtraction
+tensorA + tensorB
+tensorA - tensorB
+
+3. Matrix multiply
+tf.matmul(tensor, tensor)
+
+4. Transpose
+tf.transpose(tensor)
+
+5. Determinant
+tf.matrix_determinant(tensor)
+
+6. Inverse
+tf.matrix_inverse(tensor)
+
+7. Decompositions
+tf.cholesky(tensor)
+
+8. Eigen
+tf.self_adjoint_eig(tensor)
+
+
+# Declaring Operations
+tf.div(a, b)	# return the value of division in dtype of 'a'
+tf.truediv(a, b)
+tf.floordiv(a, b)
+tf.mod(a, b)	# like a%b in java
+tf.cross(a, b)
+
+abs() Absolute value of one input tensor
+ceil() Ceiling function of one input tensor
+cos() Cosine function of one input tensor
+exp() Base e exponential of one input tensor
+floor() Floor function of one input tensor
+inv() Multiplicative inverse (1/x) of one input tensor
+log() Natural logarithm of one input tensor
+maximum() Element-wise max of two tensors
+minimum() Element-wise min of two tensors
+neg() Negative of one input tensor
+pow() The first tensor raised to the second tensor element-wise
+round() Rounds one input tensor
+rsqrt() One over the square root of one tensor
+sign() Returns -1, 0, or 1, depending on the sign of the tensor
+sin() Sine function of one input tensor
+sqrt() Square root of one input tensor
+square() Square of one input tensor
+
+digamma() Psi function, the derivative of the lgamma() function
+erf() Gaussian error function, element-wise, of one tensor
+erfc() Complimentary error function of one tensor
+igamma() Lower regularized incomplete gamma function
+igammac() Upper regularized incomplete gamma function
+lbeta() Natural logarithm of the absolute value of the beta function
+lgamma() Natural logarithm of the absolute value of the gamma function
+squared_difference() Computes the square of the differences between two tensors
+
+
+# Implementing Activation Functions
+tf.nn.relu(tensor)	# max(0,x)
+tf.nn.relu6(tensor)	# min(max(0,x),6)
+tf.nn.sigmoid(tensor)	# 1/(1+exp(-x))
+tf.nn.tanh(tensor)	# ((exp(x)-exp(-x))/(exp(x)+exp(-x))
+tf.nn.softsign(tensor)	# x/(abs(x) + 1)
+tf.nn.softplus(tensor)	# log(exp(x) + 1)
+tf.nn.elu(tensor)	# ELU: (exp(x)+1) if x < 0 else x
+
+
+# Working with Data Sources
+1. Iris data
+from sklearn import datasets
+iris = datasets.load_iris()
+
+2. Birth weight data
+'https://www.umass.edu/statdata/statdata/data/lowbwt.dat'
+
+3. Boston Housing data
+'https://archive.ics.uci.edu/ml/machine-learningdatabases/housing/housing.data'
+
+4. MNIST
+from tensorflow.examples.tutorials.mnist import input_data
+mnist = input_data.read_data_sets("MNIST_data/"," one_hot=True)
+
+5. Spam-ham text data
+'http://archive.ics.uci.edu/ml/machine-learningdatabases/00228/smsspamcollection.zip'
+
+6. Movie review data
+'http://www.cs.cornell.edu/people/pabo/moviereview-data/rt-polaritydata.tar.gz'
+
+7. CIFAR-10 image data
+'http://www.cs.toronto.edu/~kriz/cifar.html'
+
+8. The works of Shakespeare text data
+'http://www.gutenberg.org/cache/epub/100/pg100.txt'
+
+9. English-German sentence translation data
+'http://www.manythings.org/anki/deu-eng.zip'
+
+
+# Additional Resources
+'https://github.com/nfmcclure/tensorflow_cookbook'
+'https://www.tensorflow.org/api_docs/python'
+'https://www.tensorflow.org/tutorials/index.html'
+'https://github.com/tensorflow/tensorflow'
+'https://hub.docker.com/r/tensorflow/tensorflow/'
+'http://stackoverflow.com/questions/tagged/Tensorflow'
+'https://www.udacity.com/course/deeplearning--ud730'
+'http://playground.tensorflow.org/'
+'https://www.coursera.org/learn/neuralnetworks'
+'http://cs231n.stanford.edu/'
+
+
+Chapter 2 The TensorFlow Way
+# Operations in a Computational Graph
+omit
+
+
+# Layering Nested Operations
+tf.placeholder(tf.float32, shape=(None, 3))
+
+
+# Working with Multiple Layers
+tf.nn.conv2d(input, filter, strides, padding)	# Output = (W-F+2P)/S+1, where W is the input size, F is the filter size, P is the padding of zeros, and S is the stride.
+tf.squeeze(tensor)	# Removes dimensions of size 1 from the shape of a tensor
+with tf.name_scope('name_scope') as scope:
+
+
+# Implementing Loss Functions
+import matplotlib.pyplot as plt
+x_vals = tf.linspace(-1., 1., 500)
+target = tf.constant(0.)
+
+tf.square(target - value) or tf.nn.l2_loss(value)	# L2 norm loss
+tf.abs(target - value)	# L1 norm loss
+tf.mul(tf.square(tf.constant(0.25)), tf.sqrt(1. + tf.square((target - value)/tf.constant(0.25))) - 1.)	# Pseudo-huber loss
+omit	# Classification loss
+tf.maximum(0., 1. - tf.mul(target, value))	# Hinge loss
+- tf.mul(target, tf.log(value)) - tf.mul((1. -target), tf.log(1. - value))	# Cross-entropy loss
+tf.nn.sigmoid_cross_entropy_with_logits(values, targets)	# Sigmoid cross-entropy loss
+tf.nn.weighted_cross_entropy_with_logits(values, targets, weight)	# Weighted cross-entropy loss
+tf.nn.softmax_cross_entropy_with_logits(unscaled_logits, target_dist)	# Softmax cross-entropy loss
+tf.nn.sparse_softmax_cross_entropy_with_logits(unscaled_logits, sparse_target_dist)	# Sparse softmax cross-entropy loss
+
+Loss function | Use | Benefits | Disadvantages
+L2 | Regression | More stable | Less robust
+L1 | Regression | More robust | Less stable
+Psuedo-Huber | Regression | More robust and stable | One more parameter
+Hinge | Classification | Creates a max margin for use in SVM | Unbounded loss affected by outliers
+Cross-entropy | Classification | More stable | Unbounded loss, less robust
+
+Model metric | Description
+R-squared (coefficient of determination) | For linear models, this is the proportion of variance in the dependent variable that is explained by the independent data.
+RMSE (root mean squared error) | For continuous models, measures the difference between predictions and actual via the square root of the average squared error.
+Confusion matrix | For categorical models, we look at a matrix of predicted categories versus actual categories. A perfect model has all the counts along the diagonal.
+Recall | For categorical models, this is the fraction of true positives over all predicted positives.
+Precision | For categorical models, this is the fraction of true positives over all actual positives.
+F-score | For categorical models, this is the harmonic mean of precision and recall.
+
+
+# Implementing Back Propagation
+1. Created the data.
+2. Initialized placeholders and variables.
+3. Created a loss function.
+4. Defined an optimization algorithm.
+5. And finally, iterated across random data samples to iteratively update our variables
+
+tf.train.GradientDescentOptimizer(learning_rate)
+tf.train.MomentumOptimizer(learning_rate, momentum)
+tf.train.AdadeltaOptimizer()
+'https://www.tensorflow.org/api_docs/python/train/optimizers'
+
+
+# Working with Batch and Stochastic Training
+mini-batch
+
+import matplotlib.pyplot as plt
+plt.plot(x, y, 'b-')
+plt.legend()
+plt.show()
+
+Type of training | Advantages | Disadvantages
+Stochastic | Randomness may help move out of local minimums. | Generally, needs more iterations to converge.
+Batch | Finds minimums quicker. | Takes more resources to compute.
+
+
+# Combining Everything Together
+iris_data
+
+
+# Evaluating Models
+
+
+
+Chapter 3 Linear Regression
+# Using the Matrix Inverse Method
+omit (basic)
+
+
+# Implementing a Decomposition Method
+omit (basic)
+
+
+# Learning The TensorFlow Way of Linear Regression
+
+
+
+# Understanding Loss Functions in Linear Regression
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
