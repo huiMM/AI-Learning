@@ -257,16 +257,180 @@ omit (basic)
 # Learning The TensorFlow Way of Linear Regression
 
 
-
 # Understanding Loss Functions in Linear Regression
+L1 norm
+L2 norm
+
+
+# Implementing Deming regression
+Deming regression is something like SVM in 1-Dimension
+
+
+# Implementing Lasso and Ridge Regression
+Lasso regression: RSS with L1 norm
+Ridge regression: RSS with L2 norm
+
+
+# Implementing Elastic Net Regression
+a = alpha, b = beta
+(1-a) * 1/2 * ||b||(L2) + a * ||b||(L1)
+
+
+# Implementing Logistic Regression
+accuracy - valid dataset
 
 
 
+Chapter 4 Support Vector Machines
+# Working with a Linear SVM
+linear SVD model: maximum margin loss function
+
+
+# Reduction to Linear Regression
+
+
+# Working with Kernels in TensorFlow
+non-linear SVM with kernel
+
+
+# Implementing a Non-Linear SVM
+
+
+# Implementing a Multi-Class SVM
 
 
 
+Chapter 5 Nearest Neighbor Methods
+# Working with Nearest Neighbors
 
 
+# Working with Text-Based Distances
+
+
+# Computing with Mixed Distance Functions
+
+
+# Using an Address Matching Example
+
+
+# Using Nearest Neighbors for Image Recognition
+
+
+
+Chapter 6 Neural Networks
+# Implementing Operational Gates
+
+
+# Working with Gates and Activation Functions
+
+
+# Implementing a One-Layer Neural Network
+
+
+# Implementing Different Layers
+pooling
+
+
+# Using a Multilayer Neural Network
+
+
+# Improving the Predictions of Linear Models
+
+
+# Learning to Play Tic Tac Toe
+
+
+
+Chapter 7 Natural Language Processing
+# Working with bag of words
+
+
+# Implementing TF-IDF
+
+
+# Working with Skip-gram Embeddings
+
+
+# Working with CBOW Embeddings
+
+
+# Making Predictions with Word2vec
+
+
+# Using Doc2vec for Sentiment Analysis
+
+
+
+Chapter 8 Convolutional Neural Networks
+# Implementing a Simpler CNN
+sparse_softmax_cross_entropy_with_logits: labels=[BATCH_SIZE], logits=[BATCH_SIZE, NUM_CLASSES], NUM_CLASSES from [0, NUM_CLASSES-1]
+softmax_cross_entropy_with_logits: ONE-HOT Encoder
+
+# Implementing an Advanced CNN
+alex net
+
+
+# Retraining Existing CNN models
+inception net
+
+
+# Applying Stylenet/Neural-Style
+
+
+# Implementing DeepDream
+
+
+A Neural Algorithm of Artistic Style
+Chapter 9 Recurrent Neural Networks
+# Implementing RNNs for Spam Prediction
+
+
+# Implementing an LSTM Model
+
+
+# Stacking multiple LSTM Layers
+
+
+# Creating Sequence-to-Sequence Models
+
+
+# Training a Siamese Similarity Measure
+
+
+
+Chapter 10 Taking TensorFlow to Production
+# Implementing Unit Tests
+
+
+# Using Multiple Executors
+GPU, CPU
+
+
+# Parallelizing TensorFlow
+Cluster
+
+
+# Taking TensorFlow to Production
+
+
+# Productionalizing TensorFlow – An Example
+saver, ckpt
+
+
+
+Chapter 11 More with TensorFlow
+# Visualizing graphs in Tensorboard
+tf.summary
+scalar, histogram
+
+
+# Working with a Genetic Algorithm
+
+
+# Clustering Using K-Means
+
+
+# Solving a System of ODEs
 
 
 
