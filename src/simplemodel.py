@@ -41,6 +41,7 @@ def main(_):
             # [BATCH, 28, 28, 1] - conv2d(k=2, s=2, o=64), relu [BATCH, 14, 14, 1]
             # parameters: weight [2, 2, 1, 64], bias [64]
             kernel = tf.get_variable(name='weight', dtype=tf.float32, shape=[2, 2, 1, 64], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
+#             tf.summary('loss', loss)
             bias = tf.get_variable(name='bias', dtype=tf.float32, shape=[64], initializer=tf.constant_initializer(0., dtype=tf.float32))
             conv = tf.nn.conv2d(input, filter=kernel, strides=[1, 2, 2, 1], padding='SAME')
             logits = tf.nn.bias_add(conv, bias)
@@ -68,6 +69,7 @@ def main(_):
         
         # loss: cross entropy
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.cast(y_label, tf.int32), logits=logits))
+        tf.summary.scalar('loss', loss)
         
         # global_step init
         global_step = tf.Variable(0, trainable=False, name='global_step')
@@ -75,6 +77,9 @@ def main(_):
         # optimizer
         training_op = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(loss, global_step=global_step)
     
+        # merge all summary defined
+        merge_all = tf.summary.merge_all()
+        
         # ckpt saver
         saver = tf.train.Saver()
 
@@ -82,33 +87,43 @@ def main(_):
         ckpt_name = "mnist-alpha"
         checkpoint_dir = os.path.join(FLAGS.log_dir, model_dir)
         
+        # init summary writer
+        writer = tf.summary.FileWriter(checkpoint_dir)
+        
         init_op = tf.global_variables_initializer()
         
         with tf.Session() as sess:
-            # ckpt saver restore
+            # restore checkpoint
             ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
             if ckpt and ckpt.model_checkpoint_path:
-                print("load ckpt")
+                print("Load checkpoint")
                 ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
                 saver.restore(sess, os.path.join(checkpoint_dir, ckpt_name))
             else:
-                print("init ckpt")
+                print("Initialize checkpoint")
                 if not os.path.exists(checkpoint_dir):
                     os.makedirs(checkpoint_dir)
                 sess.run(init_op)
 
-            step = 0
+            print("--- Begin loop ---")
             while True:
                 try:
-                    sess.run(training_op)
-                    step = step + 1
-                    if step % 200 == 0:
-                        saver.save(sess, checkpoint_dir)
-                        print("saver save @%s" % step)
+                    merge_all_summary, _ = sess.run([merge_all, training_op])
+                    g_step = int(global_step.eval())
+                    
+                    # write summary
+                    if g_step % 1 == 0:
+                        writer.add_summary(merge_all_summary, g_step)
+                        writer.flush()
+                    # save ckpt
+                    if g_step % 100 == 0:
+                        saver.save(sess, os.path.join(checkpoint_dir, ckpt_name))
+                        print("Save checkpoint @ global step %d" % g_step)
                 except tf.errors.OutOfRangeError:
-                    saver.save(sess, checkpoint_dir)
-                    print("saver save @%s" % step)
-                    print("End")
+                    saver.save(sess, os.path.join(checkpoint_dir, ckpt_name))
+                    print("Save checkpoint @ global step %d" % g_step)
+                    writer.close()
+                    print("--- End loop ---")
                     break
 
 if __name__ == '__main__':
