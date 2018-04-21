@@ -5,37 +5,39 @@
 import argparse
 import os
 import sys
-import re
-
-from six.moves import xrange
 import tensorflow as tf
 # import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
-from tensorflow.python.training.basic_session_run_hooks import StepCounterHook
 
 
 FLAGS = None
 
 IMG_SIZE = 28
 
+
+def input_fn(data='mnist', mode='train'):
+    # raw data
+    dataset = input_data.read_data_sets(os.path.join(FLAGS.input_data_dir, data), FLAGS.fake_data)
+
+    # batch preparation
+    if mode == 'train':
+        tensors = (dataset.train.images, dataset.train.labels)
+    else:
+        tensors = (dataset.test.images, dataset.test.labels)
+    ds = tf.data.Dataset.from_tensor_slices(tensors)
+    ds_iter = ds.shuffle(buffer_size=10000).batch(FLAGS.batch_size).repeat(FLAGS.max_epoches).make_one_shot_iterator()
+    
+    return ds_iter
     
 def main(_):
     with tf.Graph().as_default():
-        # raw data
-        dataset = input_data.read_data_sets(FLAGS.input_data_dir, FLAGS.fake_data)
-    
-        # batch preparation
-        ds_training = tf.data.Dataset.from_tensor_slices((dataset.train.images, dataset.train.labels))
-        ds_training = ds_training.shuffle(buffer_size=10000)
-        ds_training = ds_training.batch(FLAGS.batch_size)
-        ds_training = ds_training.repeat(FLAGS.max_epoches)
-        iter = ds_training.make_one_shot_iterator()
-    
+        ds_iter = input_fn()
+        
         # logits
-        x_data, y_label = iter.get_next()
+        x_data, y_label = ds_iter.get_next()
         
         # [BATCH, 28, 28] - reshape [BATCH, 28, 28, 1]
-        input = tf.reshape(x_data, shape=[FLAGS.batch_size, IMG_SIZE, IMG_SIZE, 1])
+        input_data = tf.reshape(x_data, shape=[FLAGS.batch_size, IMG_SIZE, IMG_SIZE, 1])
         
         with tf.variable_scope('conv1'):
             # [BATCH, 28, 28, 1] - conv2d(k=2, s=2, o=64), relu [BATCH, 14, 14, 1]
@@ -43,7 +45,7 @@ def main(_):
             kernel = tf.get_variable(name='weight', dtype=tf.float32, shape=[2, 2, 1, 64], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
 #             tf.summary('loss', loss)
             bias = tf.get_variable(name='bias', dtype=tf.float32, shape=[64], initializer=tf.constant_initializer(0., dtype=tf.float32))
-            conv = tf.nn.conv2d(input, filter=kernel, strides=[1, 2, 2, 1], padding='SAME')
+            conv = tf.nn.conv2d(input_data, filter=kernel, strides=[1, 2, 2, 1], padding='SAME')
             logits = tf.nn.bias_add(conv, bias)
             logits = tf.nn.relu(logits)
             
@@ -137,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument(
             '--max_epoches',
             type=int,
-            default=1,
+            default=2,
             help='Number of epoches to run trainer.'
     )
     parser.add_argument(
@@ -149,7 +151,7 @@ if __name__ == '__main__':
     parser.add_argument(
             '--input_data_dir',
             type=str,
-            default=os.path.join(os.getenv('TEST_TMPDIR', '..\\'), 'data\\mnist'),
+            default=os.path.join(os.getenv('TEST_TMPDIR', '..\\'), 'data'),
             help='Directory to put the input data.'
     )
     parser.add_argument(
