@@ -3,13 +3,13 @@
 '''
 import os
 import tensorflow as tf
-from simplemodel import Model
+from model import Model
 from config import ModelConfig 
 
 def train(config):
     with tf.Graph().as_default() as g:
         model = Model(config)
-        ds_iter = model.input_fn()
+        ds_iter = model.input_fn(data='mnist', mode='train')
         
         # input data and label
         x_data, y_label = ds_iter.get_next()
@@ -74,7 +74,14 @@ def train(config):
                     break
 
 def main(_):
-    config = ModelConfig(model_name='mnist-alpha', input_data_dir=os.path.join('..', 'data'), log_dir=os.path.join('..', 'log'), max_epoches=2)
+    config = ModelConfig()
+    config.model_name = 'mnist-alpha'
+    config.input_data_dir = os.path.join('..', 'data')
+    config.log_dir = os.path.join('..', 'log')
+    config.batch_size = 100
+    config.max_epoches = 2
+    config.learning_rate = 1e-3
+    config.fake_data = False
     train(config)
 
 if __name__ == '__main__':

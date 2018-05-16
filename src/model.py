@@ -10,22 +10,33 @@ IMG_SIZE = 28
 
 class Model(object):
     def __init__(self, config):
-        self.config = config
+        self._config = config
+
+    @ property
+    def config(self):
+        return self._config
+
+    @ config.setter
+    def config(self, value):
+        self._config = value
 
     def input_fn(self, data='mnist', mode='train'):
         # raw data
         dataset = input_data.read_data_sets(os.path.join(self.config.input_data_dir, data), self.config.fake_data)
     
         # batch preparation
-        if mode == 'train':
+        if mode == 'train': # 55000
             tensors = (dataset.train.images, dataset.train.labels)
-        elif mode == 'validation':
+        elif mode == 'validation':  # 5000
             tensors = (dataset.validation.images, dataset.validation.labels)
-        else:
+        else:   # test 10000
             tensors = (dataset.test.images, dataset.test.labels)
         
         ds = tf.data.Dataset.from_tensor_slices(tensors)
         ds_iter = ds.shuffle(buffer_size=10000).batch(self.config.batch_size).repeat(self.config.max_epoches).make_one_shot_iterator()
+        
+#         ds = tf.data.Dataset.from_tensors(tensors)
+#         ds_iter = ds.make_one_shot_iterator()
         
         return ds_iter
     
@@ -78,3 +89,9 @@ class Model(object):
         train_op = tf.train.GradientDescentOptimizer(self.config.learning_rate).minimize(loss, global_step=global_step)
         
         return train_op
+
+    def eval_fn(self, logits, labels):
+        eval_res = tf.nn.in_top_k(logits, tf.cast(labels, tf.int32), 1)
+        correct_cnt = tf.reduce_sum(tf.cast(eval_res, tf.int32))
+        
+        return correct_cnt
