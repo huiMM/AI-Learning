@@ -56,6 +56,8 @@ def main(_):
     config.log_dir = os.path.join('..', 'log')
     config.batch_size = 10000
     config.max_epoches = 1
+    config.input_size = 28
+    config.num_classes = 10
     config.fake_data = False
     evaluate(config)
 

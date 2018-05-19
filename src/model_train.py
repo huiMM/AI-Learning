@@ -4,11 +4,13 @@
 import os
 import tensorflow as tf
 from model import Model
-from config import ModelConfig 
+from resnet_model import ResnetModel
+from config import ModelConfig
 
 def train(config):
     with tf.Graph().as_default() as g:
-        model = Model(config)
+#         model = Model(config)
+        model = ResnetModel(config)
         ds_iter = model.input_fn(data='mnist', mode='train')
         
         # input data and label
@@ -75,12 +77,15 @@ def train(config):
 
 def main(_):
     config = ModelConfig()
-    config.model_name = 'mnist-alpha'
+#     config.model_name = 'mnist-alpha'
+    config.model_name = 'mnist-resnet'
     config.input_data_dir = os.path.join('..', 'data')
     config.log_dir = os.path.join('..', 'log')
     config.batch_size = 100
     config.max_epoches = 2
+    config.input_size = 28
     config.learning_rate = 1e-3
+    config.num_classes = 10
     config.fake_data = False
     train(config)
 

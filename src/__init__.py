@@ -2,5 +2,6 @@
 @author: xusheng
 '''
 
-import model
 import config
+import model
+import resnet_model

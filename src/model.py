@@ -6,8 +6,6 @@ import os
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-IMG_SIZE = 28
-
 class Model(object):
     def __init__(self, config):
         self._config = config
@@ -35,14 +33,11 @@ class Model(object):
         ds = tf.data.Dataset.from_tensor_slices(tensors)
         ds_iter = ds.shuffle(buffer_size=10000).batch(self.config.batch_size).repeat(self.config.max_epoches).make_one_shot_iterator()
         
-#         ds = tf.data.Dataset.from_tensors(tensors)
-#         ds_iter = ds.make_one_shot_iterator()
-        
         return ds_iter
     
     def logits(self, data):
         # [BATCH, 28, 28] - reshape [BATCH, 28, 28, 1]
-        input_data = tf.reshape(data, shape=[self.config.batch_size, IMG_SIZE, IMG_SIZE, 1])
+        input_data = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, 1])
         
         with tf.variable_scope('conv1'):
             # [BATCH, 28, 28, 1] - conv2d(k=2, s=2, o=64), relu [BATCH, 14, 14, 1]
@@ -70,8 +65,8 @@ class Model(object):
         with tf.variable_scope('fc2'):
             # [BATCH, 256] - linear, relu [BATCH, 10]
             # parameters: weight [256, 10], bias [10]
-            weight = tf.get_variable(name='weight', dtype=tf.float32, shape=[256, 10], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
-            bias = tf.get_variable(name='bias', dtype=tf.float32, shape=[10], initializer=tf.constant_initializer(0., dtype=tf.float32))
+            weight = tf.get_variable(name='weight', dtype=tf.float32, shape=[256, self.config.num_classes], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
+            bias = tf.get_variable(name='bias', dtype=tf.float32, shape=[self.config.num_classes], initializer=tf.constant_initializer(0., dtype=tf.float32))
             logits = tf.nn.bias_add(tf.matmul(logits, weight), bias)
         
         tf.summary.histogram('logits', logits)

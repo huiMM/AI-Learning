@@ -44,6 +44,14 @@ class ModelConfig(object):
         self._max_epoches = value
     
     @property
+    def input_size(self):
+        return self._input_size
+    
+    @input_size.setter
+    def input_size(self, value):
+        self._input_size = value
+        
+    @property
     def learning_rate(self):
         return self._learning_rate
     
@@ -51,6 +59,14 @@ class ModelConfig(object):
     def learning_rate(self, value):
         self._learning_rate = value
     
+    @property
+    def num_classes(self):
+        return self._num_classes
+    
+    @num_classes.setter
+    def num_classes(self, value):
+        self._num_classes = value
+        
     @property
     def fake_data(self):
         return self._fake_data
