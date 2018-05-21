@@ -7,10 +7,8 @@ from model import Model
 from resnet_model import ResnetModel
 from config import ModelConfig
 
-def train(config):
+def train(model):
     with tf.Graph().as_default() as g:
-#         model = Model(config)
-        model = ResnetModel(config)
         ds_iter = model.input_fn(data='mnist', mode='train')
         
         # input data and label
@@ -34,7 +32,7 @@ def train(config):
         # ckpt saver
         saver = tf.train.Saver()
 
-        checkpoint_dir = os.path.join(config.log_dir, config.model_name)
+        checkpoint_dir = os.path.join(model.config.log_dir, model.config.model_name)
         
         # init summary writer
         writer = tf.summary.FileWriter(checkpoint_dir, graph=g)
@@ -66,19 +64,18 @@ def train(config):
                         writer.flush()
                     # save ckpt
                     if g_step % 100 == 0:
-                        saver.save(sess, os.path.join(checkpoint_dir, config.model_name))
+                        saver.save(sess, os.path.join(checkpoint_dir, model.config.model_name))
                         print("Save checkpoint @ global step %d" % g_step)
                 except tf.errors.OutOfRangeError:
-                    saver.save(sess, os.path.join(checkpoint_dir, config.model_name))
+                    saver.save(sess, os.path.join(checkpoint_dir, model.config.model_name))
                     print("Save checkpoint @ global step %d" % g_step)
                     writer.close()
                     print("--- End loop ---")
                     break
 
-def main(_):
+def trainDefaultModel():
     config = ModelConfig()
-#     config.model_name = 'mnist-alpha'
-    config.model_name = 'mnist-resnet'
+    config.model_name = 'mnist-alpha'
     config.input_data_dir = os.path.join('..', 'data')
     config.log_dir = os.path.join('..', 'log')
     config.batch_size = 100
@@ -87,7 +84,27 @@ def main(_):
     config.learning_rate = 1e-3
     config.num_classes = 10
     config.fake_data = False
-    train(config)
+    
+    model = Model(config)
+    train(model)
+    
+def trainResnetModel():
+    config = ModelConfig()
+    config.model_name = 'mnist-resnet'
+    config.input_data_dir = os.path.join('..', 'data')
+    config.log_dir = os.path.join('..', 'log')
+    config.batch_size = 100
+    config.max_epoches = 1
+    config.input_size = 28
+    config.learning_rate = 1e-3
+    config.num_classes = 10
+    config.fake_data = False
+    
+    model = ResnetModel(config)
+    train(model)
+
+def main(_):
+    trainResnetModel()
 
 if __name__ == '__main__':
     tf.app.run(main=main)

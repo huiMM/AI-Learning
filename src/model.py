@@ -59,7 +59,7 @@ class Model(object):
             logits = tf.reshape(logits, shape=[-1, 64*7*7])
             weight = tf.get_variable(name='weight', dtype=tf.float32, shape=[64*7*7, 256], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
             bias = tf.get_variable(name='bias', dtype=tf.float32, shape=[256], initializer=tf.constant_initializer(0., dtype=tf.float32))
-            logits = tf.nn.bias_add(tf.matmul(logits, weight), bias)
+            logits = tf.nn.xw_plus_b(logits, weight, bias)
             logits = tf.nn.relu(logits)
     
         with tf.variable_scope('fc2'):
@@ -67,7 +67,7 @@ class Model(object):
             # parameters: weight [256, 10], bias [10]
             weight = tf.get_variable(name='weight', dtype=tf.float32, shape=[256, self.config.num_classes], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
             bias = tf.get_variable(name='bias', dtype=tf.float32, shape=[self.config.num_classes], initializer=tf.constant_initializer(0., dtype=tf.float32))
-            logits = tf.nn.bias_add(tf.matmul(logits, weight), bias)
+            logits = tf.nn.xw_plus_b(logits, weight, bias)
         
         tf.summary.histogram('logits', logits)
         

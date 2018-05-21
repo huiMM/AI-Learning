@@ -3,12 +3,13 @@
 '''
 import os
 import tensorflow as tf
+from config import ModelConfig
 from model import Model
-from config import ModelConfig 
+from resnet_model import ResnetModel
 
-def evaluate(config):
+
+def evaluate(model):
     with tf.Graph().as_default():
-        model = Model(config)
         ds_iter = model.input_fn(data='mnist', mode='test')
         
         # input data and label
@@ -21,15 +22,11 @@ def evaluate(config):
         logits = model.logits(x_data)
         
         correct_cnt = model.eval_fn(logits, y_label)
-#         correct_sum = tf.reduce_sum(tf.cast(correct, tf.int32))
-
-        # loss
-#         loss = model.loss_fn(logits, y_label)
         
         # ckpt saver
         saver = tf.train.Saver()
 
-        checkpoint_dir = os.path.join(config.log_dir, config.model_name)
+        checkpoint_dir = os.path.join(model.config.log_dir, model.config.model_name)
         
         with tf.Session() as sess:
             # restore checkpoint
@@ -41,15 +38,14 @@ def evaluate(config):
                 
                 while True:
                     try:
-                        print("Load checkpoint @ global step %d, accuracy = %2f%%" % (global_step.eval(), correct_cnt.eval()*100.0/10000.0))
+                        print("Load checkpoint @ global step %d, accuracy = %2f%%" % (global_step.eval(), correct_cnt.eval() * 100.0 / 10000.0))
                     except tf.errors.OutOfRangeError:
                         break
             else:
                 print("Fail to load checkpoint")
 
 
-
-def main(_):
+def evaluateDefaultModel():
     config = ModelConfig()
     config.model_name = 'mnist-alpha'
     config.input_data_dir = os.path.join('..', 'data')
@@ -59,7 +55,29 @@ def main(_):
     config.input_size = 28
     config.num_classes = 10
     config.fake_data = False
-    evaluate(config)
+    
+    model = Model(config)
+    evaluate(model)
+
+
+def evaluateResnetModel():
+    config = ModelConfig()
+    config.model_name = 'mnist-resnet'
+    config.input_data_dir = os.path.join('..', 'data')
+    config.log_dir = os.path.join('..', 'log')
+    config.batch_size = 10000
+    config.max_epoches = 1
+    config.input_size = 28
+    config.num_classes = 10
+    config.fake_data = False
+    
+    model = ResnetModel(config)
+    evaluate(model)
+
+    
+def main(_):
+    evaluateResnetModel()
+
 
 if __name__ == '__main__':
     tf.app.run(main=main)
