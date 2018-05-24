@@ -2,7 +2,9 @@
 @author: xusheng
 '''
 
+
 class ModelConfig(object):
+
     @property
     def model_name(self):
         return self._model_name
@@ -67,6 +69,14 @@ class ModelConfig(object):
     def num_classes(self, value):
         self._num_classes = value
         
+    @property
+    def save_per_steps(self):
+        return self._save_per_steps
+    
+    @save_per_steps.setter
+    def save_per_steps(self, value):
+        self._save_per_steps = value
+    
     @property
     def fake_data(self):
         return self._fake_data
