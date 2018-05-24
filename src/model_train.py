@@ -5,6 +5,7 @@ import os
 import tensorflow as tf
 from model import Model
 from resnet_model import ResnetModel
+from resnet_bottleneck_model import ResnetBottleneckModel
 from config import ModelConfig
 
 def train(model):
@@ -63,7 +64,7 @@ def train(model):
                         writer.add_summary(merge_all_summary, g_step)
                         writer.flush()
                     # save ckpt
-                    if g_step % 100 == 0:
+                    if g_step % model.config.save_per_steps == 0:
                         saver.save(sess, os.path.join(checkpoint_dir, model.config.model_name))
                         print("Save checkpoint @ global step %d" % g_step)
                 except tf.errors.OutOfRangeError:
@@ -83,6 +84,7 @@ def trainDefaultModel():
     config.input_size = 28
     config.learning_rate = 1e-3
     config.num_classes = 10
+    config.save_per_steps = 100
     config.fake_data = False
     
     model = Model(config)
@@ -98,13 +100,30 @@ def trainResnetModel():
     config.input_size = 28
     config.learning_rate = 1e-3
     config.num_classes = 10
+    config.save_per_steps = 100
     config.fake_data = False
     
     model = ResnetModel(config)
     train(model)
 
+def trainBottleneckResnetModel():
+    config = ModelConfig()
+    config.model_name = 'mnist-resnet-bottleneck'
+    config.input_data_dir = os.path.join('..', 'data')
+    config.log_dir = os.path.join('..', 'log')
+    config.batch_size = 100
+    config.max_epoches = 1
+    config.input_size = 28
+    config.learning_rate = 1e-3
+    config.num_classes = 10
+    config.save_per_steps = 10
+    config.fake_data = False
+    
+    model = ResnetBottleneckModel(config)
+    train(model)
+    
 def main(_):
-    trainResnetModel()
+    trainBottleneckResnetModel()
 
 if __name__ == '__main__':
     tf.app.run(main=main)

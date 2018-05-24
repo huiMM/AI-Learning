@@ -3,7 +3,6 @@
 '''
 import tensorflow as tf
 from model import Model
-from config import ModelConfig
 from six.moves import xrange
 
 class ResnetModel(Model):
@@ -33,9 +32,9 @@ class ResnetModel(Model):
 #         return tf.nn.leaky_relu(x, alpha=alpha, name='lrelu')
         return tf.nn.relu(x, name='relu')
     
-    def _res_block(self, scope_name, x, in_channels, out_channels, stride):
+    def _res_block(self, scope_name, x, in_channels, out_channels, stride=1):
         # Res: H(x) = F(x) + x
-        # F(x) = Conv(Relu(BN( Conv(Relu(BN(x))) ))); bn->activation->conv
+        # F(x) = Conv(Relu(BN( Conv(Relu(BN(x))) ))); bn->relu->conv
         with tf.variable_scope(scope_name):
             orig_x = x
             x = self._batch_norm('bn_1', x)
@@ -47,7 +46,8 @@ class ResnetModel(Model):
             x = self._conv('conv_2', x, 3, out_channels, out_channels, 1)
             
             if in_channels != out_channels:
-                orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
+                if stride > 1:
+                    orig_x = tf.nn.avg_pool(orig_x, [1, stride, stride, 1], [1, stride, stride, 1], 'VALID')
                 orig_x = tf.pad(orig_x,
                                 [[0, 0],
                                  [0, 0],
@@ -79,28 +79,28 @@ class ResnetModel(Model):
             # [batch, 28*28, 1, 16]
             x = self._conv('conv', x, filter_size=3, in_channels=1, out_channels=16, stride=1)
         
-        # [batch, 28*28, 16, 32]
-        x = self._res_block('block_1_0', x, in_channels=16, out_channels=32, stride=1)
+        # [batch, 28*28, 16, 16]
+        x = self._res_block('block_1_0', x, in_channels=16, out_channels=16, stride=1)
         for i in xrange(1, 4):
-            # [batch, 28*28, 32, 32]
-            x = self._res_block('block_1_%d' % i, x, in_channels=32, out_channels=32, stride=1)
+            # [batch, 28*28, 16, 16]
+            x = self._res_block('block_1_%d' % i, x, in_channels=16, out_channels=16, stride=1)
         
-        # [batch, 14*14, 32, 64]
-        x = self._res_block('block_2_0', x, in_channels=32, out_channels=64, stride=2)
+        # [batch, 14*14, 16, 32]
+        x = self._res_block('block_2_0', x, in_channels=16, out_channels=32, stride=2)
         for i in xrange(1, 4):
-            # [batch, 14*14, 64, 64]
-            x = self._res_block('block_2_%d' % i, x, in_channels=64, out_channels=64, stride=1)
+            # [batch, 14*14, 32, 32]
+            x = self._res_block('block_2_%d' % i, x, in_channels=32, out_channels=32, stride=1)
         
-            # [batch, 7*7, 64, 128]
-#         x = self._res_block('block_3_0', x, in_channels=64, out_channels=128, stride=2)
-#         for i in xrange(1, 4):
-            # [batch, 7*7, 128, 128]
-#             x = self._res_block('block_3_%d' % i, x, in_channels=128, out_channels=128, stride=1)
+        # [batch, 7*7, 32, 64]
+        x = self._res_block('block_3_0', x, in_channels=32, out_channels=64, stride=2)
+        for i in xrange(1, 4):
+            # [batch, 7*7, 64, 64]
+            x = self._res_block('block_3_%d' % i, x, in_channels=64, out_channels=64, stride=1)
         
         with tf.variable_scope('global_avgpool'):
             x = self._batch_norm('bn', x)
             x = self._lrelu(x)
-            # [batch, 128]
+            # [batch, 64]
             x = self._global_avg_pool(x)
         
         with tf.variable_scope('fc'):
@@ -110,7 +110,3 @@ class ResnetModel(Model):
         tf.summary.histogram('logits', x)
         
         return x
-
-
-if __name__ == '__main__':
-    m = ResnetModel(ModelConfig())
