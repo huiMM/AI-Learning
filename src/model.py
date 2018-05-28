@@ -18,6 +18,38 @@ class Model(object):
     def config(self, value):
         self._config = value
 
+    def _conv(self, scope_name, x, filter_size, in_channels, out_channels, stride):
+        with tf.variable_scope(scope_name):
+            kernel = tf.get_variable(name='kernel', shape=[filter_size, filter_size, in_channels, out_channels], dtype=tf.float32, initializer=tf.random_normal_initializer(stddev=1e-1))
+            # backup tf.sqrt(2.0 / (filter_size * filter_size * out_channel))
+            return tf.nn.conv2d(x, filter=kernel, strides=[1, stride, stride, 1], padding='SAME')
+
+    def _batch_norm(self, scope_name, x, scale=1.0, offset=0.0, epsilon=1e-3):
+        # x_norm =  gamma * ((x - x_mean) / sqrt(x_var + epsilon) + beta
+        
+        # running_x_mean = momentum * running_x_mean + (1 - momentum) * x_mean
+        # running_x_var = momentum * running_x_var + (1 - momentum) * x_var
+        # replace BN implementation with tf.contrib.layers.batch_norm, decay = momentum, usually 0.999, 0.99, 0.9 etc
+        with tf.variable_scope(scope_name):
+            # out_channels' shape
+            params_shape = x.get_shape()[-1]
+            # offset
+            beta = tf.get_variable(name='beta', shape=[params_shape], dtype=tf.float32, initializer=tf.constant_initializer(offset, tf.float32))
+            # scale
+            gamma = tf.get_variable(name='gamma', shape=[params_shape], dtype=tf.float32, initializer=tf.constant_initializer(scale, tf.float32))
+
+            # axes [0, 1, 2] for [batch, height, width, out_channels]
+            mean, variance = tf.nn.moments(x, axes=[0, 1, 2], name='moments')
+
+            bn = tf.nn.batch_normalization(x, mean=mean, variance=variance, offset=beta, scale=gamma, variance_epsilon=epsilon, name='batch_normal')
+            bn.set_shape(x.get_shape())
+#             tf.summary.histogram('bn', bn)
+            return bn
+    
+    def _lrelu(self, x, alpha=0.0):
+#         return tf.nn.leaky_relu(x, alpha=alpha, name='lrelu')
+        return tf.nn.relu(x, name='relu')
+    
     def input_fn(self, data='mnist', mode='train'):
         # raw data
         dataset = input_data.read_data_sets(os.path.join(self.config.input_data_dir, data), self.config.fake_data)

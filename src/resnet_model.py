@@ -6,31 +6,6 @@ from model import Model
 from six.moves import xrange
 
 class ResnetModel(Model):
-    def _conv(self, scope_name, x, filter_size, in_channels, out_channels, stride):
-        with tf.variable_scope(scope_name):
-            kernel = tf.get_variable(name='kernel', shape=[filter_size, filter_size, in_channels, out_channels], dtype=tf.float32, initializer=tf.random_normal_initializer(stddev=1e-1))
-            # backup tf.sqrt(2.0 / (filter_size * filter_size * out_channel))
-            return tf.nn.conv2d(x, filter=kernel, strides=[1, stride, stride, 1], padding='SAME')
-
-    def _batch_norm(self, scope_name, x):
-        # ((x-mean) / var) * gamma + beta
-        with tf.variable_scope(scope_name):
-            params_shape = x.get_shape()[-1]
-            # offset
-            beta = tf.get_variable(name='beta', shape=[params_shape], dtype=tf.float32, initializer=tf.constant_initializer(0.0, tf.float32))
-            # scale
-            gamma = tf.get_variable(name='gamma', shape=[params_shape], dtype=tf.float32, initializer=tf.constant_initializer(1.0, tf.float32))
-
-            mean, variance = tf.nn.moments(x, axes=[0, 1, 2], name='moments')
-
-            bn = tf.nn.batch_normalization(x, mean=mean, variance=variance, offset=beta, scale=gamma, variance_epsilon=1e-3, name='batch_normal')
-            bn.set_shape(x.get_shape())
-#             tf.summary.histogram('bn', bn)
-            return bn
-    
-    def _lrelu(self, x, alpha=0.0):
-#         return tf.nn.leaky_relu(x, alpha=alpha, name='lrelu')
-        return tf.nn.relu(x, name='relu')
     
     def _res_block(self, scope_name, x, in_channels, out_channels, stride=1):
         # Res: H(x) = F(x) + x
