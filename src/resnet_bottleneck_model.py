@@ -46,10 +46,10 @@ class ResnetBottleneckModel(ResnetModel):
 
     def logits(self, data):
         # [batch, 28, 28, 1]
-        x = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, 1])
+        x = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
         with tf.variable_scope('init_0'):
             # [batch, 28*28, 1, 16]
-            x = self._conv('conv', x, filter_size=3, in_channels=1, out_channels=16, stride=1)
+            x = self._conv('conv', x, filter_size=3, in_channels=self.config.channels, out_channels=16, stride=1)
         
         # [batch, 28*28, 16, 64]
         x = self._res_block('block_1_0', x, in_channels=16, out_channels=64, stride=1)
@@ -75,9 +75,8 @@ class ResnetBottleneckModel(ResnetModel):
             # [batch, 1024]
             x = self._global_avg_pool(x)
         
-        with tf.variable_scope('fc'):
-            # [batch, 10]
-            x = self._fc(x, self.config.num_classes)
+        # [batch, 10]
+        x = self._fc('fc', x, self.config.num_classes)
         
         tf.summary.histogram('logits', x)
         

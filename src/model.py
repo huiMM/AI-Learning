@@ -18,13 +18,35 @@ class Model(object):
     def config(self, value):
         self._config = value
 
-    def _conv(self, scope_name, x, filter_size, in_channels, out_channels, stride):
+    def _fc(self, scope_name, x, output_size, stddev=1e-3):
         with tf.variable_scope(scope_name):
-            kernel = tf.get_variable(name='kernel', shape=[filter_size, filter_size, in_channels, out_channels], dtype=tf.float32, initializer=tf.random_normal_initializer(stddev=1e-1))
-            # backup tf.sqrt(2.0 / (filter_size * filter_size * out_channel))
-            return tf.nn.conv2d(x, filter=kernel, strides=[1, stride, stride, 1], padding='SAME')
+            x = tf.reshape(x, [self.config.batch_size, -1])
+            w = tf.get_variable('weight', [x.get_shape()[-1], output_size], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=stddev))
+            b = tf.get_variable('biases', [output_size], dtype=tf.float32, initializer=tf.constant_initializer(0., dtype=tf.float32))
+            return tf.nn.xw_plus_b(x, w, b)
+        
+    def _conv(self, scope_name, x, filter_size, input_channels, output_channels, stride_size, padding='SAME', stddev=1e-1):
+        with tf.variable_scope(scope_name):
+            kernel = tf.get_variable('kernel', shape=[filter_size, filter_size, input_channels, output_channels], dtype=tf.float32, initializer=tf.random_normal_initializer(stddev=stddev))
+            biases = tf.get_variable('biases', shape=[output_channels], dtype=tf.float32, initializer=tf.constant_initializer(0., dtype=tf.float32))
 
-    def _batch_norm(self, scope_name, x, scale=1.0, offset=0.0, epsilon=1e-3):
+            x = tf.nn.conv2d(x, filter=kernel, strides=[1, stride_size, stride_size, 1], padding=padding)
+            x = tf.nn.bias_add(x, biases)
+            return x
+
+    def _trans_conv(self, scope_name, x, filter_size, output_shape, stride_size, padding='SAME', stddev=1e-3):
+        with tf.variable_scope(scope_name):
+            # x: [N, H, W, C]
+            # output_shape: [height, width, input_channel, output_channel]
+            # filter: [height, width, output_channels, in_channels]
+            kernel = tf.get_variable('kernel', shape=[filter_size, filter_size, output_shape[-1], x.get_shape()[-1]], dtype=tf.float32, initializer=tf.random_normal_initializer(stddev=stddev))
+            biases = tf.get_variable('biases', shape=[output_shape[-1]], dtype=tf.float32, initializer=tf.constant_initializer(0., dtype=tf.float32))
+            
+            x = tf.nn.conv2d_transpose(x, filter=kernel, output_shape=output_shape, strides=[1, stride_size, stride_size, 1], padding=padding)
+            x = tf.nn.bias_add(x, biases)
+            return x
+
+    def _batch_norm(self, scope_name, x, scale=1., offset=0., epsilon=1e-3):
         # x_norm =  gamma * ((x - x_mean) / sqrt(x_var + epsilon) + beta
         
         # running_x_mean = momentum * running_x_mean + (1 - momentum) * x_mean
@@ -47,8 +69,10 @@ class Model(object):
             return bn
     
     def _lrelu(self, x, alpha=0.0):
-#         return tf.nn.leaky_relu(x, alpha=alpha, name='lrelu')
-        return tf.nn.relu(x, name='relu')
+        if alpha == 0.0:
+            return tf.nn.relu(x, name='relu')
+        else:
+            return tf.nn.leaky_relu(x, alpha=alpha, name='lrelu')
     
     def input_fn(self, data='mnist', mode='train'):
         # raw data
@@ -69,12 +93,12 @@ class Model(object):
     
     def logits(self, data):
         # [BATCH, 28, 28] - reshape [BATCH, 28, 28, 1]
-        input_data = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, 1])
+        input_data = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
         
         with tf.variable_scope('conv1'):
             # [BATCH, 28, 28, 1] - conv2d(k=2, s=2, o=64), relu [BATCH, 14, 14, 1]
             # parameters: weight [2, 2, 1, 64], bias [64]
-            kernel = tf.get_variable(name='weight', dtype=tf.float32, shape=[2, 2, 1, 64], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
+            kernel = tf.get_variable(name='weight', dtype=tf.float32, shape=[2, 2, self.config.channels, 64], initializer=tf.truncated_normal_initializer(mean=0., stddev=1.))
     #             tf.summary('loss', loss)
             bias = tf.get_variable(name='bias', dtype=tf.float32, shape=[64], initializer=tf.constant_initializer(0., dtype=tf.float32))
             conv = tf.nn.conv2d(input_data, filter=kernel, strides=[1, 2, 2, 1], padding='SAME')

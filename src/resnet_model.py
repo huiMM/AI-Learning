@@ -40,19 +40,13 @@ class ResnetModel(Model):
         assert x.get_shape().ndims == 4
         # reduce dimension of 2nd & 3rd
         return tf.reduce_mean(x, [1, 2])
-
-    def _fc(self, x, out_dim):
-        x = tf.reshape(x, [self.config.batch_size, -1])
-        w = tf.get_variable('weight', [x.get_shape()[1], out_dim], initializer=tf.initializers.variance_scaling(scale=1.0))
-        b = tf.get_variable('biases', [out_dim], initializer=tf.constant_initializer())
-        return tf.nn.xw_plus_b(x, w, b)
     
     def logits(self, data):
         # [batch, 28, 28, 1]
-        x = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, 1])
+        x = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
         with tf.variable_scope('init_0'):
             # [batch, 28*28, 1, 16]
-            x = self._conv('conv', x, filter_size=3, in_channels=1, out_channels=16, stride=1)
+            x = self._conv('conv', x, filter_size=3, in_channels=self.config.channels, out_channels=16, stride=1)
         
         # [batch, 28*28, 16, 16]
         x = self._res_block('block_1_0', x, in_channels=16, out_channels=16, stride=1)
@@ -78,9 +72,8 @@ class ResnetModel(Model):
             # [batch, 64]
             x = self._global_avg_pool(x)
         
-        with tf.variable_scope('fc'):
-            # [batch, 10]
-            x = self._fc(x, self.config.num_classes)
+        # [batch, 10]
+        x = self._fc('fc', x, self.config.num_classes)
         
         tf.summary.histogram('logits', x)
         
