@@ -60,6 +60,14 @@ class ModelConfig(object):
     @learning_rate.setter
     def learning_rate(self, value):
         self._learning_rate = value
+        
+    @property
+    def channels(self):
+        return self._channels
+    
+    @channels.setter
+    def channels(self, value):
+        self._channels = value
     
     @property
     def num_classes(self):
