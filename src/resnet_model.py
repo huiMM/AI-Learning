@@ -41,7 +41,7 @@ class ResnetModel(Model):
         # reduce dimension of 2nd & 3rd
         return tf.reduce_mean(x, [1, 2])
     
-    def logits(self, data):
+    def build_model(self, data):
         # [batch, 28, 28, 1]
         x = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
         with tf.variable_scope('init_0'):

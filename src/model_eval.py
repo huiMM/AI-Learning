@@ -19,7 +19,7 @@ def evaluate(model):
         global_step = tf.Variable(0, trainable=False, name='global_step')
         
         # logits
-        logits = model.logits(x_data)
+        logits = model.build_model(x_data)
         
         correct_cnt = model.eval_fn(logits, y_label)
         

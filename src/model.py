@@ -74,7 +74,7 @@ class Model(object):
         else:
             return tf.nn.leaky_relu(x, alpha=alpha, name='lrelu')
     
-    def input_fn(self, data='mnist', mode='train'):
+    def input_fn(self, data='mnist', mode='train', z=None):
         # raw data
         dataset = input_data.read_data_sets(os.path.join(self.config.input_data_dir, data), self.config.fake_data)
     
@@ -86,12 +86,15 @@ class Model(object):
         else:   # test 10000
             tensors = (dataset.test.images, dataset.test.labels)
         
+        if z != None:
+            pass
+        
         ds = tf.data.Dataset.from_tensor_slices(tensors)
         ds_iter = ds.shuffle(buffer_size=10000).batch(self.config.batch_size).repeat(self.config.max_epoches).make_one_shot_iterator()
         
         return ds_iter
     
-    def logits(self, data):
+    def build_model(self, data):
         # [BATCH, 28, 28] - reshape [BATCH, 28, 28, 1]
         input_data = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
         
@@ -136,10 +139,10 @@ class Model(object):
         
         return loss_op
     
-    def train_fn(self, loss, global_step):
-        train_op = tf.train.GradientDescentOptimizer(self.config.learning_rate).minimize(loss, global_step=global_step)
+    def optimizer_fn(self, loss, global_step):
+        op = tf.train.GradientDescentOptimizer(self.config.learning_rate).minimize(loss, global_step=global_step)
         
-        return train_op
+        return op
 
     def eval_fn(self, logits, labels):
         eval_res = tf.nn.in_top_k(logits, tf.cast(labels, tf.int32), 1)

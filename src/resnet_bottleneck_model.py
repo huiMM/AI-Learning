@@ -44,7 +44,7 @@ class ResnetBottleneckModel(ResnetModel):
 #         tf.logging.debug('image after unit %s', x.get_shape())
         return x
 
-    def logits(self, data):
+    def build_model(self, data):
         # [batch, 28, 28, 1]
         x = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
         with tf.variable_scope('init_0'):
