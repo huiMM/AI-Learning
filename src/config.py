@@ -62,6 +62,14 @@ class ModelConfig(object):
         self._learning_rate = value
         
     @property
+    def beta(self):
+        return self._beta
+    
+    @beta.setter
+    def beta(self, value):
+        self._beta = value
+        
+    @property
     def channels(self):
         return self._channels
     
