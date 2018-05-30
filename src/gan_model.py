@@ -13,8 +13,8 @@ class GanModel(Model):
         # g(z): z[N, z_dim] -> fc [N, 4*4*256] -> reshape [N, 4, 4, 256] -> deconv k5 s2 [N, 7, 7, 128]
         # -》 deconv k5 s2 [N, 14, 14, 64] -> deconv k5 s2 [N, 28, 28, 1]
         with tf.variable_scope('generator'):
-            k_size = [_, 5, 5, 5]   # skip the first one
-            stride_size = [_, 2, 2, 2]   # skip the first one
+            k_size = [0, 5, 5, 5]   # skip the first one
+            stride_size = [0, 2, 2, 2]   # skip the first one
             layer_size = [4, 7, 14, 28]
             output_size = 64
             
@@ -41,7 +41,7 @@ class GanModel(Model):
         # x [N, 28, 28, 1]
         # D(x): x [N, 28, 28, 1] -> conv k3 s2 [N, 14, 14, 64] -> conv k3 s2 [N, 7, 7, 128]
         # -> conv k3 s2 [N, 4, 4, 256] -> reshape [N, 4*4*256] -> fc [N, 1]
-        with tf.variable_scope("discriminator", reuse):
+        with tf.variable_scope("discriminator", reuse=reuse):
             k_size = [3, 3, 3]
             stride_size = [2, 2, 2]
             output_size = 64
@@ -63,18 +63,31 @@ class GanModel(Model):
 
             return x
     
-    def logits(self, data):
+    def build_model(self, x, z):
         # [BATCH, 28, 28] - reshape [BATCH, 28, 28, 1]
-        input_data = tf.reshape(data, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
+        x = tf.reshape(x, shape=[self.config.batch_size, self.config.input_size, self.config.input_size, self.config.channels])
         
-        z_dim = 100
-        z = tf.placeholder(dtype=tf.float32, shape=[self.conf.batch_size, z_dim], name='z')
-        G = self._generator(z)
+        # [N, 100] -> [N, 28, 28, 1]
+        Gz_logits = self._generator(z)
+        # [N, 28, 28, 1] -> [N, 1]
+        Dx_logits = self._discriminator(x, reuse=False)
+        # [N, 28, 28, 1] -> [N, 1]        
+        D_Gz_logits = self._discriminator(Gz_logits, reuse=True)
         
-        # TODO
+        return Dx_logits, D_Gz_logits   # real, fake
+
+    def loss_fn(self, D_real_logits, D_fake_logits):
+        d_real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_real_logits, labels=tf.ones_like(D_real_logits)))
+        d_fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_fake_logits, labels=tf.zeros_like(D_fake_logits)))
         
+        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_fake_logits, labels=tf.ones_like(D_fake_logits)))
         
+        d_loss = d_real_loss + d_fake_loss
         
-#         tf.summary.histogram('logits', logits)
+        return d_loss, g_loss
+    
+    def optimizer_fn(self, d_loss, g_loss, global_step):
+        d_opt = tf.train.AdamOptimizer(self.config.learning_rate, beta1=self.config.beta).minimize(d_loss, global_step=global_step)
+        g_opt = tf.train.AdamOptimizer(self.config.learning_rate, beta1=self.config.beta).minimize(g_loss, global_step=global_step)
         
-#         return logits
+        return d_opt, g_opt

@@ -2,6 +2,7 @@
 @author: xusheng
 '''
 import os
+import numpy as np
 import tensorflow as tf
 from model import Model
 from resnet_model import ResnetModel
@@ -20,13 +21,13 @@ def train(model):
         global_step = tf.Variable(0, trainable=False, name='global_step')
         
         # logits
-        logits = model.logits(x_data)
+        logits = model.build_model(x_data)
         
         # loss
         loss = model.loss_fn(logits, y_label)
         
         # optimizer
-        training_op = model.train_fn(loss, global_step)
+        opt = model.optimizer_fn(loss, global_step)
 
         # merge all summary defined
         merge_all = tf.summary.merge_all()
@@ -57,7 +58,7 @@ def train(model):
             print("--- Begin loop ---")
             while True:
                 try:
-                    merge_all_summary, _ = sess.run([merge_all, training_op])
+                    merge_all_summary, _ = sess.run([merge_all, opt])
                     g_step = int(global_step.eval())
                     
                     # write summary
@@ -134,9 +135,10 @@ def trainGanModel():
     config.batch_size = 100
     config.max_epoches = 1
     config.input_size = 28
+    config.beta = 0.5
     config.learning_rate = 1e-3
     config.channels = 1
-    config.num_classes = 10
+#     config.num_classes = 10
     config.save_per_steps = 10
     config.fake_data = False
     
@@ -144,19 +146,21 @@ def trainGanModel():
     with tf.Graph().as_default() as g:
         ds_iter = model.input_fn(data='mnist', mode='train')
         
-        # input data and label
-        x_data, y_label = ds_iter.get_next()
+        x_data, _ = ds_iter.get_next()
         
-        # global_step
         global_step = tf.Variable(0, trainable=False, name='global_step')
         
-        # logits
-        logits = model.logits(x_data)
+        z_dim = 100
+        z = tf.placeholder(dtype=tf.float32, shape=[model.config.batch_size, z_dim], name='z')
         
-        # merge all summary defined
+        real_logits, fake_logits = model.build_model(x_data, z)
+        
+        d_loss, g_loss = model.loss_fn(real_logits, fake_logits)
+        
+        d_opt, g_opt = model.optimizer_fn(d_loss, g_loss, global_step)
+        
         merge_all = tf.summary.merge_all()
         
-        # ckpt saver
         saver = tf.train.Saver()
     
         checkpoint_dir = os.path.join(model.config.log_dir, model.config.model_name)
@@ -179,9 +183,48 @@ def trainGanModel():
                     os.makedirs(checkpoint_dir)
                 sess.run(init_op)
     
-            print("--- Begin Test ---")
-            print(logits.get_shape())
-            print("--- End Test ---")
+            print("--- Begin Loop ---")
+            while True:
+                try:
+                    batch_z = np.random.uniform(-1, 1, [model.config.batch_size, z_dim]).astype(np.float32)
+                    
+                    # update D network
+                    _ = sess.run([d_opt],
+                        feed_dict={
+                          z: batch_z
+                        })
+                    
+                    # update G network
+                    _ = sess.run([g_opt],
+                        feed_dict={
+                          z: batch_z
+                        })
+                    
+                    # update G network twice
+                    _ = sess.run([g_opt],
+                        feed_dict={
+                          z: batch_z
+                        })
+                    
+#                     merge_all_summary = sess.run([merge_all])
+                    g_step = int(global_step.eval())
+                    print(g_step)
+                    
+                    # write summary
+#                     if g_step % 1 == 0:
+#                         writer.add_summary(merge_all_summary, g_step)
+#                         writer.flush()
+                    # save ckpt
+                    if g_step % model.config.save_per_steps == 0:
+                        saver.save(sess, os.path.join(checkpoint_dir, model.config.model_name))
+                        print("Save checkpoint @ global step %d" % g_step)
+                except tf.errors.OutOfRangeError:
+                    saver.save(sess, os.path.join(checkpoint_dir, model.config.model_name))
+                    print("Save checkpoint @ global step %d" % g_step)
+                    writer.close()
+                    print("--- End loop ---")
+                    break
+            print("--- End Loop ---")
 
 
 def main(_):
