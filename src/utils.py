@@ -7,6 +7,21 @@ import pandas as pd
 from six.moves import xrange
 import os
 
+class SequenceGenerator(object):
+    def __init__(self, seed=1):
+        self._seed = seed
+        self._gen = self._generator()
+    
+    def next(self):
+        return next(self._gen)
+        
+    def _generator(self):
+        count = self._seed
+        while True:
+            yield count
+            count += 1
+
+
 class Datasets(object):
     def __init__(self, path):
         self._path = path
