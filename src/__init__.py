@@ -7,3 +7,5 @@ import model
 import resnet_model
 import resnet_bottleneck_model
 import gan_model
+import lenet
+import data
