@@ -2,9 +2,10 @@
 @author: xusheng
 '''
 
-from lenet import LeNet5
-from data import DatasetFactory, MnistDataset
+from models import LeNet5
+from datasets import DatasetFactory
 import os
+import numpy as np
 
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
@@ -22,8 +23,8 @@ class Scene(object):
             'classes',
             'verbose',
             'weight_path',
-            'ckpt_path',
-            'log_path'
+            'log_path',
+            'h5py'
         }
         for kwarg in kwargs:
             if kwarg not in allowed_kwargs:
@@ -52,13 +53,13 @@ class Scene(object):
             
         if 'verbose' in kwargs:
             self._verbose = kwargs['verbose']
-            
-        if 'ckpt_path' in kwargs:
-            self._ckpt_path = kwargs['ckpt_path']
-            
+
         if 'log_path' in kwargs:
             self._log_path = kwargs['log_path']
 
+        if 'h5py' in kwargs:
+            self._h5py = kwargs['h5py']
+        
     def train(self):
         ds_train = self._dataset.load_dataset_train()
         iter_train = ds_train.shuffle(buffer_size=10000).batch(batch_size=self._batch_size).repeat(count=self._max_epoch).make_one_shot_iterator()
@@ -67,9 +68,10 @@ class Scene(object):
         iter_val = ds_val.shuffle(buffer_size=1000).batch(batch_size=self._batch_size).repeat(count=self._max_epoch).make_one_shot_iterator()
         
         ds_test = self._dataset.load_dataset_test()
-        iter_test = ds_test.shuffle(buffer_size=2000).batch(batch_size=self._batch_size).repeat(count=1).make_one_shot_iterator()
+        iter_test = ds_test.shuffle(buffer_size=2000).batch(batch_size=self._batch_size).make_one_shot_iterator()
         
-        m = self._model.build_model()
+        if self._model is None:
+            m = self._model.build_model()
         m.summary()
         
         optimizer = Adam()
@@ -77,7 +79,7 @@ class Scene(object):
         metrics = ['accuracy']
         m.compile(optimizer=optimizer, loss=loss, metrics=metrics)
         
-        ckptCallback = ModelCheckpoint(filepath=os.path.join(self._log_path, 'model-{epoch:02d}.h5'), period=1)
+        ckptCallback = ModelCheckpoint(filepath=os.path.join(self._log_path, self._h5py), period=1)
         logsCallback = TensorBoard(log_dir=self._log_path)
         
         history = m.fit(iter_train, None, epochs=self._max_epoch, steps_per_epoch=self._dataset.get_ds_size_train()//self._batch_size, verbose=self._verbose, validation_data=iter_val, validation_steps=self._dataset.get_ds_size_val()//self._batch_size, callbacks=[ckptCallback, logsCallback])
@@ -87,6 +89,23 @@ class Scene(object):
         print('Test acurracy:', score[1])
         
         print(history.history.keys())
+    
+    def predict(self):
+        ds_test = self._dataset.load_dataset_test()
+        iter_test = ds_test.shuffle(buffer_size=2000).batch(batch_size=self._batch_size).make_one_shot_iterator()
+        
+        if self._model is None:
+            m = self._model.build_model()
+        m.summary()
+         
+        optimizer = Adam()
+        loss = 'categorical_crossentropy'
+        m.compile(optimizer=optimizer, loss=loss)
+         
+#         out = m.predict(iter_test, verbose=self._verbose, steps=self._dataset.get_ds_size_test()//self._batch_size)
+        out = m.predict(iter_test, verbose=self._verbose, steps=1)
+        print(out)
+        print('label:', np.argmax(out, axis=1))
 
 if __name__ == '__main__':
     params = {
@@ -97,8 +116,12 @@ if __name__ == '__main__':
         'input.channel': 1,
         'classes': 10,
         'verbose': 1,
-        'log_path': os.path.join('..', 'log', 'mnist-lenet5')
+        'log_path': os.path.join('..', 'log', 'mnist-lenet5'),
+        'weight_path': os.path.join('..', 'log', 'mnist-lenet5'),
+        'h5py': 'model-01.h5'   # 'model-{epoch:02d}.h5'
     }
     scene = Scene(**params)
-    scene.train()
+#     scene.train()
+    
+    scene.predict()
     

@@ -8,4 +8,4 @@ import resnet_model
 import resnet_bottleneck_model
 import gan_model
 import models
-import data
+import datasets

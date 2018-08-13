@@ -50,7 +50,7 @@ class Model(object):
     
 class LeNet5(Model):
     def __init__(self, name='LeNet5', weight_path=None, **kwargs):
-        super(Model, self).__init__(name=name, weight_path, **kwargs)
+        super(LeNet5, self).__init__(name=name, weight_path=weight_path, **kwargs)
     
     def _build_model(self):
         model = Sequential()
