@@ -56,7 +56,7 @@ class MnistDataset(Dataset):
         return self._get_ds_size(self._raw_ds.train.images)
     
     def get_ds_size_val(self):
-        return self._get_ds_size(self._raw_ds.val.images)
+        return self._get_ds_size(self._raw_ds.validation.images)
 
     def get_ds_size_test(self):
         return self._get_ds_size(self._raw_ds.test.images)
