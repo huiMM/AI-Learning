@@ -17,9 +17,9 @@ class Dataset(object):
         allowed_kwargs = {
             'z'
         }
-        for kwarg in kwargs:
-            if kwarg not in allowed_kwargs:
-                raise TypeError('Keyword argument not understood:', kwarg)
+#         for kwarg in kwargs:
+#             if kwarg not in allowed_kwargs:
+#                 raise TypeError('Keyword argument not understood:', kwarg)
 
     def _get_ds_size(self, x):
         return x.shape[0]
@@ -60,3 +60,12 @@ class MnistDataset(Dataset):
 
     def get_ds_size_test(self):
         return self._get_ds_size(self._raw_ds.test.images)
+
+class DatasetFactory(object):
+    def get_instance(self, name, **kwargs):
+        d = {
+            'mnist': MnistDataset(**kwargs)
+        }
+        if name not in d:
+            raise TypeError('Dataset argument not understood:', type)
+        return d[name]
