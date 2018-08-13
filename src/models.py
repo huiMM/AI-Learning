@@ -4,11 +4,12 @@
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation, Conv2D, MaxPool2D, Flatten, Reshape
+import os
 
 class Model(object):
-    def __init__(self, name, weight_path=None, **kwargs):
+    def __init__(self, name, load_weights=False, **kwargs):
         self._name = name
-        self._weight_path = weight_path
+        self._load_weights = load_weights
         
         self._input_shape = None
         self._row = None
@@ -16,6 +17,8 @@ class Model(object):
         self._channel = None
         
         allowed_kwargs = {
+            'log_path',
+            'h5py',
             'input_shape',
             'input.row',
             'input.col',
@@ -36,21 +39,27 @@ class Model(object):
             
         if 'classes' in kwargs:
             self._classes = kwargs['classes']
+        
+        if 'log_path' in kwargs:
+            self._log_path = kwargs['log_path']
+            
+        if 'h5py' in kwargs:
+            self._h5py = kwargs['h5py']
     
     def _build_model(self):
         return None
     
     def build_model(self):
         model = self._build_model()
-        if self._weight_path is not None:
-            model.load_weights(self._weight_path)
+        if self._load_weights:
+            model.load_weights(os.path.join(self._log_path, self._h5py))
         
         self._model = model
         return self._model
     
 class LeNet5(Model):
-    def __init__(self, name='LeNet5', weight_path=None, **kwargs):
-        super(LeNet5, self).__init__(name=name, weight_path=weight_path, **kwargs)
+    def __init__(self, name='LeNet5', load_weights=False, **kwargs):
+        super(LeNet5, self).__init__(name=name, load_weights=load_weights, **kwargs)
     
     def _build_model(self):
         model = Sequential()
