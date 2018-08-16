@@ -10,6 +10,8 @@ import numpy as np
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 
+import cv2
+
 class Scene(object):
 
     def __init__(self, **kwargs):
@@ -36,7 +38,7 @@ class Scene(object):
             load_weights = kwargs.pop('load_weights')
 
         # TODO: define ModelFactory to create specific model by name
-        self._model = LeNet5(name='LeNet5', load_weight=load_weights, **kwargs).build_model()
+        self._model = LeNet5(name='LeNet5', load_weights=load_weights, **kwargs).build_model()
         self._dataset = DatasetFactory().get_instance('mnist', **kwargs)
 
         if 'max_epoch' in kwargs:
@@ -78,8 +80,6 @@ class Scene(object):
         ds_test = self._dataset.load_dataset_test()
         iter_test = ds_test.shuffle(buffer_size=2000).batch(batch_size=self._batch_size).make_one_shot_iterator()
         
-        self._model.summary()
-        
         optimizer = Adam()
         loss = 'categorical_crossentropy'
         metrics = ['accuracy']
@@ -96,18 +96,31 @@ class Scene(object):
         
         print(history.history.keys())
     
-    def predict(self):
-        ds_test = self._dataset.load_dataset_test()
-        iter_test = ds_test.shuffle(buffer_size=2000).batch(batch_size=self._batch_size).make_one_shot_iterator()
-        
-        self._model.summary()
-         
+    def predict_auto(self):
         optimizer = Adam()
         loss = 'categorical_crossentropy'
         self._model.compile(optimizer=optimizer, loss=loss)
-         
-#         out = self._model.predict(iter_test, verbose=self._verbose, steps=self._dataset.get_ds_size_test()//self._batch_size)
-        out = self._model.predict(iter_test, verbose=self._verbose, steps=1)
+
+        ds_test = self._dataset.load_dataset_test()
+        iter_test = ds_test.shuffle(buffer_size=2000).batch(batch_size=self._batch_size).make_one_shot_iterator()
+ 
+        out = self._model.predict(iter_test, verbose=self._verbose, steps=self._dataset.get_ds_size_test()//self._batch_size)
+        print('label:', np.argmax(out, axis=1))
+    
+    def predict(self, x):
+        optimizer = Adam()
+        loss = 'categorical_crossentropy'
+        self._model.compile(optimizer=optimizer, loss=loss)
+ 
+        out = self._model.predict(x, verbose=self._verbose, steps=1)
+        print('label:', np.argmax(out, axis=1))
+        
+    def predict_prob(self, x):
+        optimizer = Adam()
+        loss = 'categorical_crossentropy'
+        self._model.compile(optimizer=optimizer, loss=loss)
+
+        out = self._model.predict_proba(x, verbose=self._verbose)
         print(out)
         print('label:', np.argmax(out, axis=1))
 
@@ -140,12 +153,31 @@ def run_test():
         'verbose': 1,
         'log_path': os.path.join('..', 'log', 'mnist-lenet5'),
         'load_weights': True,
-        'h5py': 'model-120.h5'  # a certain h5py config file
+        'h5py': 'model-50.h5'  # a certain h5py config file
     }
     scene = Scene(**params)
-    scene.predict()
+    scene.predict_auto()
 
 if __name__ == '__main__':
 #     run_train()
-    run_test()
+#     run_test()
+
+    params = {
+        'batch_size': 128,
+        'input.row': 28,
+        'input.col': 28,
+        'input.channel': 1,
+        'classes': 10,
+        'verbose': 1,
+        'log_path': os.path.join('..', 'log', 'mnist-lenet5'),
+        'load_weights': True,
+        'h5py': 'model-50.h5'  # a certain h5py config file
+    }
+    scene = Scene(**params)   
+    
+    image = cv2.imread(os.path.join('..', 'data', '2.jpg'), 0)
+    image = image.reshape((1, 784))
+    image = (255 - image) / 255
+    scene.predict(image)
+    scene.predict_prob(image)
     
